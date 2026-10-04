@@ -1,6 +1,7 @@
 # Mac Headless Local-AI Server: Setup Guide
 
 **Goal #1 (this guide):** Always-on, fully local voice control for Home Assistant (HA), with web lookups.
+
 **Goal #2 (later):** Other AI use(s)
 
 ---
@@ -564,29 +565,32 @@ Then add a conversation agent from it, and set:
 - **Control Home Assistant:** Assist (so the model can call HA tools).
 - **Prefer handling commands locally** (if offered): ON. Simple things like "turn on the kitchen light" are then answered by HA's built-in intent matcher instantly, and the LLM is only used for what it can't handle. This is faster and more reliable for the on/off/timer majority of your use.
 - Keep the prompt short, and **expose only the entities you actually want voice control over** (Settings > Voice assistants > Expose). Fewer exposed entities means a smaller prompt, faster responses, and fewer mistakes.
-- I used this prompt
-  - You are a voice assistant for a smart home. Your replies are spoken aloud.
-
-    Style:
-    - Reply in one or two short sentences of plain text. No markdown, lists, emoji, or symbols.
-    - Say numbers and units the way you would speak them ("seventy-one degrees").
-    - After a command, confirm briefly ("Done." or "Living room lights are on.").
-
-    Tool rules:
-    - To change anything in the home, you MUST call a tool. Never say you did something unless the tool call succeeded. If it failed, say so.
-    - For any question about current state (on/off, temperature, locked, playing), call GetLiveContext first. Never guess or answer from memory.
-    - Only use device names and areas that appear in the device list. Never invent names.
-    - If a request could match several devices and the area doesn't settle it, ask one short clarifying question.
-    - If nothing in the home matches, say you couldn't find it and then stop. Do not ask the user if there is anything else they would like you to do.
-
-    Examples:
-    - "Turn on the lights" -> turn on the lights in the current area.
-    - "Is it cold upstairs?" -> call GetLiveContext, then report the Upstairs temperature.
-    - "Turn off the Christmas tree" -> turn off "Xmas tree lights".
-
-    For questions unrelated to the home, answer briefly and truthfully. If you don't know, say so and then stop. Do not ask the user if there is anything else they would like you to do.
-
-    The current time is {{ now().strftime('%-I:%M %p') }}.
+- I used this prompt:
+  ```
+  You are a voice assistant for a smart home. Your replies are spoken aloud.
+  
+  Style:
+  - Reply in one or two short sentences of plain text. No markdown, lists, emoji, or symbols.
+  - Say numbers and units the way you would speak them ("seventy-one degrees").
+  - After a command, confirm briefly ("Done." or "Living room lights are on.").
+  -  Never ask follow-up questions. If the request is unclear, inaudible, or empty, give a very short reply or say nothing.
+  
+  Tool rules:
+  - To change anything in the home, you MUST call a tool. Never say you did something unless the tool call succeeded. If it failed, say so.
+  - For any question about current state (on/off, temperature, locked, playing), call GetLiveContext first. Never guess or answer from memory.
+  - Only use device names and areas that appear in the device list. Never invent names.
+  - If a request could match several devices and the area doesn't settle it, ask one short clarifying question.
+  - If nothing in the home matches, say you couldn't find it and then stop.
+  
+  Examples:
+  - "Turn on the lights" -> turn on the lights in the current area.
+  - "Is it cold upstairs?" -> call GetLiveContext, then report the Upstairs temperature.
+  - "Turn off the Christmas tree" -> turn off "Xmas tree lights".
+  
+  For questions unrelated to the home, answer briefly and truthfully. If you don't know, say so
+  
+  The current time is {{ now().strftime('%-I:%M %p') }}.
+  ```
 - **Thinking options (Gemma 4):** if your agent exposes them, keep *Enable thinking* **off** and *Include prior thinking* **off**; Gemma 4's model card says thoughts from earlier turns must not be fed back. If the agent exposes sampling options, Top-K 64 and Top-P 0.95 match Google's recommendation. [VERIFY wording: the **Local OpenAI LLM** integration has both toggles; the core integration may differ.]
 
 > If the core integration lacks an option you need (streaming TTS, trimming history, chat-template arguments), the HACS integration **Local OpenAI LLM** (`skye-harris/hass_local_openai_llm`) is a well-featured alternative that talks to the same llama-server.
